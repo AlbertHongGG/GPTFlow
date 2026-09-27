@@ -4,18 +4,18 @@
 
 ---
 
-## ⚡ 核心能力清單
+## 核心能力清單
 
 - **TLS / JA3 指紋模擬**：內建 `curl_cffi` 模擬 Chrome 131 握手特徵，繞過 Cloudflare WAF 攔截。
 - **Sentinel PoW 演算法**：字符級復刻 OpenAI 官方混淆 32 位元 FNV-1a / Murmur 雜湊演算法（`sentinel_hash`），背景 Token 池自動預算。
-- **思考鏈 (Thinking / CoT) 原生支援**：帶入 `system_hints: ["reason"]`，終端即時分離並渲染 `🧠 思考思維鏈` 區塊。
+- **思考鏈 (Thinking / CoT) 原生支援**：帶入 `system_hints: ["reason"]`，終端即時分離並渲染 `思考思維鏈` 區塊。
 - **增量修補流解析**：解析 `delta_encoding v1` JSON-patch SSE 事件串流。
 - **多輪對話 DAG 管理**：維護本地訊息節點樹與 `parent_message_id` 指標。
 - **Token 自動續期機制**：自動透過 NextAuth Session 端點滾動刷新 JWT 與 Cookie，免頻繁重新登入。
 
 ---
 
-## 🚀 快速開始
+## 快速開始
 
 ### 1. 安裝環境
 本專案基於 `uv` 管理環境與依賴：
@@ -36,7 +36,7 @@ uv run gptflow auth status
 
 ---
 
-## 💻 常用 CLI 指令速查
+## 常用 CLI 指令速查
 
 ### 單次即時串流問答 (`gptflow chat`)
 ```bash
@@ -85,7 +85,7 @@ uv run gptflow auth import <檔案路徑>
 
 ---
 
-## 🔐 Token 與 Cookie 壽命及過期處置機制
+## Token 與 Cookie 壽命及過期處置機制
 
 ### 1. 各種 Token 與 Cookie 的有效期限
 
@@ -131,19 +131,7 @@ flowchart TD
 
 ---
 
-## 🏛️ 架構分層 (Clean Architecture)
-
-- **`gpt_flow/domain/`**：核心實體（`MessageNode`, `ConversationTree`, `AuthCredentials`）、列舉與純抽象介面（`IHttpClient`, `IAuthRepository`, `ISessionRepository`, `IChatClient`）。無任何外部框架依賴。
-- **`gpt_flow/application/`**：`ChatService` 負責協同認證狀態、調度 Sentinel Token 池、管理 DAG 對話歷史與組裝串流。
-- **`gpt_flow/infrastructure/`**：
-  - `clients/`：基於 `curl_cffi` 的 TLS/JA3 指紋客戶端、`SSEStreamParser` 增量修補流解析器、`ConversationPayloadBuilder`。
-  - `sentinel/`：`SentinelPoWSolver` 演算法、`SentinelService` 挑戰簽名與 `SentinelTokenPool` 背景池。
-  - `storage/`：`FileAuthRepository`（憑證與 Cookie 自動刷新保存）、`FileSessionRepository`（DAG 會話保存）。
-- **`gpt_flow/presentation/`**：`cli/main.py`（Typer 指令）與 `RichStreamRenderer`（終端串流渲染）。
-
----
-
-## 🧪 測試與驗證
+## 測試與驗證
 
 ```bash
 # 執行所有單元測試 (PoW 演算法、SSE 增量解析、DAG 會話、負載建構器)
