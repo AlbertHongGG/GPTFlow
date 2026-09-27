@@ -1,169 +1,157 @@
-# GPTFlow: 現代化 ChatGPT Web 非同步高架構客戶端與 CLI 工具
+# GPTFlow
 
-> **高品質設計保證**：完全採用 **Clean Architecture（整潔架構）** 與 **領域驅動設計（DDD）**，拒絕修補式設計與過度妥協，原生基於 Python 3.12+ 與 `uv` 套件管理器打造。
-
----
-
-## 🌟 核心特色
-
-1. **Clean / Hexagonal 架構 (嚴格依賴反轉 DIP)**
-   - **Domain (領域層)**：純 Python 與 Pydantic v2 定義的實體、值物件、列舉與抽象介面，完全無外部框架或 HTTP 庫污染。
-   - **Application (應用層)**：協調業務邏輯（會話樹狀態轉移、身分驗證生命週期、Sentinel 權杖排隊與調度）。
-   - **Infrastructure (基礎設施層)**：底層實現（基於 `curl_cffi` 的 JA3 指紋 impersonation、Sentinel PoW 演算法、HAR 封包解析、本地 JSON/DAG 儲存）。
-   - **Presentation (展示層)**：使用 Typer 與 Rich 提供現代化、美觀且具備色彩樣式的命令列體驗。
-
-2. **完整逆向 OpenAI Sentinel 安全攻防體系**
-   - 逆向分析 `https://chatgpt.com/sentinel/20260810913b/sdk.js`。
-   - 實現客製化 32-bit FNV-1a / Murmur 混合雜湊演算法（`sentinel_hash`），字符級相容官方 JavaScript 實作。
-   - 支援 `/sentinel/chat-requirements/prepare`、PoW 挑戰求解、`/finalize` 驗證與心跳 `/ping`。
-   - 內建 `SentinelTokenPool` 背景預運算機制，零延遲獲取新鮮的安全憑證。
-
-3. **完整支援 ChatGPT Web 最新通訊協議**
-   - **投機預熱 (Speculative Conduit Token)**：完整模擬 `/backend-api/f/conversation/prepare`，取得並攜帶 `x-conduit-token`。
-   - **Delta 增量串流解析 (`delta_encoding v1`)**：精準解析 JSON-Patch SSE 事件流，自動拼接文字區塊。
-   - **Thinking / 思考鏈原生支援**：支援最新推理模型（傳遞 `system_hints: ["reason"]`），終端即時渲染專屬 `🧠 思考思維鏈` 區塊，思考結束後自動展開主要回答。
-   - **WAF 穿透**：藉由 `curl_cffi` 模擬 Chrome 131 TLS 握手與 HTTP/2 幀特徵，完美通過 Cloudflare 防護。
-
-4. **DAG 對話樹狀結構管理**
-   - 本地儲存自動維護多輪對話的訊息節點樹（DAG），精確記錄每輪對話的 `parent_message_id`，確保多輪對話上下文不斷鏈。
+> 基於 Clean Architecture 與 DDD 設計的非同步 ChatGPT Web 逆向工程客戶端與 CLI 工具。
 
 ---
 
-## 🏗️ 系統架構圖 (Clean Architecture)
+## ⚡ 核心能力清單
 
-```mermaid
-graph TD
-    CLI[Presentation: Typer CLI & Rich Stream Renderer] --> App[Application: ChatService]
-    App --> Domain[Domain: Entities, Exceptions & Interfaces]
-    App --> StorageRepo[Infrastructure: FileSessionRepository & FileAuthRepository]
-    App --> Sentinel[Infrastructure: SentinelService & TokenPool]
-    App --> ChatApi[Infrastructure: ChatApiClient]
-    
-    Sentinel --> PoW[Infrastructure: SentinelPoWSolver]
-    Sentinel --> Http[Infrastructure: CurlHttpClient - Chrome 131 Impersonate]
-    ChatApi --> Http
-    ChatApi --> SSE[Infrastructure: SSEStreamParser]
-    ChatApi --> Builder[Infrastructure: ConversationPayloadBuilder]
-    
-    StorageRepo -.implements.-> Domain
-    Sentinel -.implements.-> Domain
-    ChatApi -.implements.-> Domain
-    Http -.implements.-> Domain
-```
+- **TLS / JA3 指紋模擬**：內建 `curl_cffi` 模擬 Chrome 131 握手特徵，繞過 Cloudflare WAF 攔截。
+- **Sentinel PoW 演算法**：字符級復刻 OpenAI 官方混淆 32 位元 FNV-1a / Murmur 雜湊演算法（`sentinel_hash`），背景 Token 池自動預算。
+- **思考鏈 (Thinking / CoT) 原生支援**：帶入 `system_hints: ["reason"]`，終端即時分離並渲染 `🧠 思考思維鏈` 區塊。
+- **增量修補流解析**：解析 `delta_encoding v1` JSON-patch SSE 事件串流。
+- **多輪對話 DAG 管理**：維護本地訊息節點樹與 `parent_message_id` 指標。
+- **Token 自動續期機制**：自動透過 NextAuth Session 端點滾動刷新 JWT 與 Cookie，免頻繁重新登入。
 
 ---
 
-## 🚀 快速安裝與環境準備
+## 🚀 快速開始
 
-本專案強烈建議使用現代 Python 套件管理器 [`uv`](https://github.com/astral-sh/uv)：
-
+### 1. 安裝環境
+本專案基於 `uv` 管理環境與依賴：
 ```bash
-# 1. 複製專案並進入專案目錄
-cd c:\Users\JasonHong\Desktop\CODE\_Project\GPTFlow
-
-# 2. 自動同步環境與依賴
+# 同步安裝依賴
 uv sync
 ```
 
----
-
-## 🔑 認證設定 (一鍵 HAR 匯入)
-
-你可以直接從瀏覽器開發者工具 (F12) 的「網路 (Network)」標籤頁匯出包含登入 ChatGPT Web 請求的 `.har` 檔案，一鍵無痛匯入認證資訊：
-
+### 2. 匯入身分認證 (HAR 匯入)
+在瀏覽器開啟 `https://chatgpt.com`，按 F12 開啟「開發者工具」->「網路 (Network)」，任發送一則訊息或重新整理頁面，對請求按右鍵「另存為包含內容的 HAR」，執行：
 ```bash
-# 匯入 HAR 封包 (自動擷取 Authorization Bearer JWT、oai-did 及全部 23 個必要 Cookies)
-uv run gptflow auth import "Packet/第二個 session 封包紀錄.json"
+# 匯入 HAR 封包 (自動擷取 Authorization Bearer JWT、oai-did 及全部 24 個必要 Cookies)
+uv run gptflow auth import "路徑/封包紀錄.json"
 
-# 檢視當前認證與訂閱狀態
+# 檢視當前認證狀態
 uv run gptflow auth status
 ```
 
 ---
 
-## 💻 CLI 指令說明
+## 💻 常用 CLI 指令速查
 
-### 1. 單次問答 (`gptflow chat`)
-
+### 單次即時串流問答 (`gptflow chat`)
 ```bash
-# 基本即時串流回答
+# 基本串流問答
 uv run gptflow chat "請簡要說明什麼是量子糾纏？"
 
-# 開啟思考鏈模式 (Thinking / Reason)
-uv run gptflow chat "請分析 13*14 的心算方式" --thinking
+# 開啟思考思維鏈模式 (-t / --thinking)
+uv run gptflow chat "請分析 13*14 的心算方式" -t
 
-# 接續既有會話進行多輪對話
+# 接續指定會話的多輪對話
 uv run gptflow chat "那 17*18 呢？" --session-id <會話ID>
 ```
 
-### 2. 互動式終端多輪對話 (`gptflow repl`)
-
+### 互動式多輪對話 (`gptflow repl`)
 ```bash
-# 啟動新對話
+# 開啟終端互動式問答 (支援上下鍵歷史紀錄、多輪上下文記憶)
 uv run gptflow repl
 
-# 啟動思考模式對話
+# 開啟思考鏈模式
 uv run gptflow repl -t
 
 # 載入歷史會話繼續交談
 uv run gptflow repl --session-id <會話ID>
 ```
 
-### 3. 會話紀錄管理 (`gptflow session`)
-
+### 會話紀錄管理 (`gptflow session`)
 ```bash
-# 列出本機所有儲存的會話
+# 列出本地所有儲存的會話
 uv run gptflow session list
 
-# 查看指定會話的完整問答歷史
+# 檢視指定會話的歷史問答
 uv run gptflow session show <會話ID>
 ```
 
----
+### 認證管理 (`gptflow auth`)
+```bash
+# 檢視當前憑證有效性、Email、訂閱方案與 Cookie 數量
+uv run gptflow auth status
 
-## 📂 專案目錄結構
+# 手動向伺服器刷新 Access Token 與 Cookie
+uv run gptflow auth refresh
 
-```text
-GPTFlow/
-├── gpt_flow/
-│   ├── application/               # 應用服務層
-│   │   └── chat_service.py        # 核心問答與對話會話調度服務
-│   ├── domain/                    # 領域層 (純粹領域模型與介面)
-│   │   ├── entities.py            # MessageNode, ConversationTree, AuthCredentials...
-│   │   ├── enums.py               # AuthorRole, StreamEventType, ModelKind...
-│   │   ├── exceptions.py          # 領域專屬異常架構
-│   │   └── interfaces.py          # DIP 依賴反轉介面 (IHttpClient, IChatClient...)
-│   ├── infrastructure/            # 基礎設施層 (具體協議與實作)
-│   │   ├── auth/                  # JWT 解析與憑證校驗
-│   │   ├── clients/               # CurlHttpClient (TLS 指紋), ChatApiClient, SSEParser
-│   │   ├── sentinel/              # SentinelPoWSolver, SentinelService, TokenPool
-│   │   └── storage/               # FileAuthRepository, FileSessionRepository
-│   ├── presentation/              # 展示層 (CLI 與渲染器)
-│   │   ├── cli/                   # Typer CLI 命令定義
-│   │   └── renderers/             # Rich 即時串流與思考區塊渲染器
-│   └── config.py                  # Pydantic 應用配置
-├── tests/                         # 單元與整合測試套件
-│   ├── test_conversation_builder.py
-│   ├── test_dag_session.py
-│   ├── test_pow_solver.py
-│   └── test_sse_parser.py
-├── pyproject.toml                 # 現代化專案標準配置 (Hatchling + uv)
-└── README.md
+# 重新匯入 HAR 檔案
+uv run gptflow auth import <檔案路徑>
 ```
 
 ---
 
-## 🧪 測試與代碼品質規範
+## 🔐 Token 與 Cookie 壽命及過期處置機制
 
-專案所有代碼均符合 Python 3.12 型別提示標準，並通過 Ruff 與 Pytest 驗證：
+### 1. 各種 Token 與 Cookie 的有效期限
+
+| 憑證類型 | 來源與機制 | 預估效期 | 過期表現 |
+| :--- | :--- | :--- | :--- |
+| **Sentinel Token**<br>(`chat_requirements_token`) | PoW 計算與 `/sentinel/finalize` 換發 | **約 3 分鐘** | 請求拒絕 (403 Sentinel Failed) |
+| **Access Token**<br>(`Authorization: Bearer <JWT>`) | `https://auth.openai.com` 簽發的 JWT | **約 10 ~ 14 天**<br>(見 payload `exp`) | 請求報 401 Unauthorized |
+| **Session Cookie**<br>(`__Secure-next-auth.session-token`) | NextAuth 登入憑證 (分卷存於 `.0` 與 `.1`) | **約 30 ~ 90 天**<br>(滾動式延長) | 無法刷新 Access Token |
+| **Cloudflare Cookies**<br>(`cf_clearance`, `__cf_bm`) | Cloudflare 邊緣節點防護與機器人驗證 | **30 分鐘 ~ 數天**<br>(受 IP 變更影響) | 請求報 403 CloudflareBlockedError |
+| **裝置識別碼**<br>(`oai-did`) | OpenAI 裝置綁定 UUID | **1 年** | 無實質影響 |
+
+---
+
+### 2. 過期時的處置流程
+
+```mermaid
+flowchart TD
+    Req[發送請求 / stream_chat] --> CheckToken{Access Token 是否過期?}
+    CheckToken -- 未過期 --> DoSentinel[背景 SentinelTokenPool 零延遲換發 PoW Token]
+    CheckToken -- 已過期 --> AutoRefresh[呼叫 GET /api/auth/session 自動續期]
+    
+    AutoRefresh --> RefreshSuccess{Session Cookie 是否有效?}
+    RefreshSuccess -- 是 --> SaveNew[自動寫回全新 Access Token 與 Cookies 至 auth.json]
+    SaveNew --> DoSentinel
+    
+    RefreshSuccess -- 否 / Cloudflare 403 --> ManualImport[拋出 TokenExpiredError / 執行 gptflow auth import 重新匯入 HAR]
+```
+
+1. **Access Token 過期（無感自動處理）**：
+   - 當程式檢測到 Access Token 到期時，**`ChatService` 會自動攔截並帶上現有 Cookie 呼叫 `GET /api/auth/session`**。
+   - 伺服器會返回新的 `accessToken` 與更新後的滾動 Cookies，系統自動持久化回 `user_cookies/auth.json`，對話流程完全無中斷。
+   - 亦可隨時手動執行 `uv run gptflow auth refresh` 進行續期。
+
+2. **Sentinel Token 過期（無感自動處理）**：
+   - 由 `SentinelTokenPool` 在背景常駐預運算，需要送出對話時直接取出已求解之新鮮 Token（效期內），耗盡時自動非同步補充。
+
+3. **Cookie 過期 / 網路 IP 變更（需重新匯入）**：
+   - **成因**：當外網 IP 變更（如切換 WiFi / VPN）導致 Cloudflare `cf_clearance` 失效，或超過 30~90 天 Session 自然失效、或手動在網頁點擊了「登出」。
+   - **處置方式**：
+     - 打開瀏覽器訪問 `https://chatgpt.com` 重新登入或按 F5。
+     - DevTools 匯出最新 HAR 檔案。
+     - 終端執行：`uv run gptflow auth import <new.har>` 即可立即恢復。
+
+---
+
+## 🏛️ 架構分層 (Clean Architecture)
+
+- **`gpt_flow/domain/`**：核心實體（`MessageNode`, `ConversationTree`, `AuthCredentials`）、列舉與純抽象介面（`IHttpClient`, `IAuthRepository`, `ISessionRepository`, `IChatClient`）。無任何外部框架依賴。
+- **`gpt_flow/application/`**：`ChatService` 負責協同認證狀態、調度 Sentinel Token 池、管理 DAG 對話歷史與組裝串流。
+- **`gpt_flow/infrastructure/`**：
+  - `clients/`：基於 `curl_cffi` 的 TLS/JA3 指紋客戶端、`SSEStreamParser` 增量修補流解析器、`ConversationPayloadBuilder`。
+  - `sentinel/`：`SentinelPoWSolver` 演算法、`SentinelService` 挑戰簽名與 `SentinelTokenPool` 背景池。
+  - `storage/`：`FileAuthRepository`（憑證與 Cookie 自動刷新保存）、`FileSessionRepository`（DAG 會話保存）。
+- **`gpt_flow/presentation/`**：`cli/main.py`（Typer 指令）與 `RichStreamRenderer`（終端串流渲染）。
+
+---
+
+## 🧪 測試與驗證
 
 ```bash
-# 執行所有單元測試 (PoW 求解器、SSE 增量解析、DAG 會話、負載建構器)
+# 執行所有單元測試 (PoW 演算法、SSE 增量解析、DAG 會話、負載建構器)
 uv run pytest
 
-# 執行 Ruff 代碼靜態檢查
+# 執行靜態代碼檢查
 uv run ruff check .
 
-# 代碼自動格式化
+# 自動格式化代碼
 uv run ruff format .
 ```

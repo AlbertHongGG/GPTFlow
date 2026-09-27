@@ -60,6 +60,7 @@ def _build_service(proxy: str | None = None) -> tuple[ChatService, CurlHttpClien
         sentinel_pool=sentinel_pool,
         session_repository=session_repo,
         chat_client=chat_client,
+        http_client=http_client,
     )
     return service, http_client
 
@@ -214,6 +215,36 @@ def auth_status() -> None:
     table.add_row("Token 是否過期", "已過期" if creds.is_expired() else "有效 (未過期)")
 
     console.print(table)
+
+
+@auth_app.command("refresh")
+def auth_refresh(
+    debug: bool = typer.Option(False, "--debug", help="開啟詳細除錯日誌"),
+) -> None:
+    """使用儲存的 Session Cookie 向 ChatGPT 伺服器刷新 Access Token 與 Cookie。"""
+    _setup_logging(debug)
+
+    async def _run() -> None:
+        auth_repo = FileAuthRepository(config.cookies_dir)
+        http_client = CurlHttpClient(proxy=config.proxy)
+        try:
+            with console.status("[bold green]正在向 ChatGPT 伺服器刷新 Access Token...[/bold green]"):
+                new_creds = await auth_repo.refresh(http_client)
+            console.print("[bold green]✓ 成功刷新 Access Token 與 Session Cookies！[/bold green]")
+            table = Table(title="更新後的憑證狀態")
+            table.add_column("屬性", style="cyan")
+            table.add_column("數值", style="green")
+            table.add_row("帳號 Email", new_creds.email or "未提供")
+            table.add_row("訂閱方案", new_creds.plan_type or "free")
+            table.add_row("Cookie 數量", str(len(new_creds.cookies)))
+            table.add_row("Token 是否過期", "已過期" if new_creds.is_expired() else "有效 (未過期)")
+            console.print(table)
+        except Exception as e:
+            console.print(f"[bold red]✗ 刷新失敗: {e}[/bold red]")
+        finally:
+            await http_client.close()
+
+    asyncio.run(_run())
 
 
 @session_app.command("list")

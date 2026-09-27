@@ -14,6 +14,7 @@ from gpt_flow.domain.exceptions import MissingCredentialsError, TokenExpiredErro
 from gpt_flow.domain.interfaces import (
     IAuthRepository,
     IChatClient,
+    IHttpClient,
     ISessionRepository,
 )
 from gpt_flow.infrastructure.sentinel.token_pool import SentinelTokenPool
@@ -30,11 +31,13 @@ class ChatService:
         sentinel_pool: SentinelTokenPool,
         session_repository: ISessionRepository,
         chat_client: IChatClient,
+        http_client: IHttpClient,
     ) -> None:
         self.auth_repo = auth_repository
         self.sentinel_pool = sentinel_pool
         self.session_repo = session_repository
         self.chat_client = chat_client
+        self.http_client = http_client
 
     async def stream_chat(
         self,
@@ -52,9 +55,14 @@ class ChatService:
                 "No credentials found. Please import your cookies or auth token."
             )
         if creds.is_expired():
-            raise TokenExpiredError(
-                "Access token is expired. Please update credentials."
-            )
+            logger.info("Access token is expired, attempting auto-refresh via session...")
+            try:
+                creds = await self.auth_repo.refresh(self.http_client)
+            except Exception as e:
+                raise TokenExpiredError(
+                    f"Access token is expired and auto-refresh failed: {e}. "
+                    "Please re-import your credentials from a fresh HAR file."
+                ) from e
 
         # 2. Resolve Conversation Tree and Parent Pointer
         tree: ConversationTree

@@ -59,6 +59,10 @@ class IAuthRepository(ABC):
     def exists(self) -> bool:
         """Check if saved credentials exist."""
 
+    @abstractmethod
+    async def refresh(self, http_client: "IHttpClient") -> AuthCredentials:
+        """Refresh access token and rolling cookies using session endpoint."""
+
 
 class ISessionRepository(ABC):
     """Persistence repository for conversation session DAGs."""
