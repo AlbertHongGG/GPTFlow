@@ -1,6 +1,6 @@
 # GPTFlow
 
-> 基於 Clean Architecture 與 DDD 設計的非同步 ChatGPT Web 逆向工程客戶端與 CLI 工具。
+基於 Clean Architecture 與 DDD 設計的非同步 ChatGPT Web 逆向工程客戶端與 CLI 工具。
 
 ---
 
@@ -36,39 +36,147 @@ uv run gptflow auth status
 
 ---
 
-## 💻 常用 CLI 指令速查
+## 💻 CLI 指令完整說明與參數清單
 
-### 串流問答與多輪對話 (`gptflow chat`)
+### 1. 串流問答與多輪對話 (`gptflow chat`)
+
+發送提示詞並以串流格式即時輸出回答。可作為單次獨立問答，亦可帶入既有會話 ID 延續多輪對話。
+
+**語法**：
 ```bash
-# 1. 建立新對話（回答完畢後終端會輸出該次對話的「會話 ID」）
+gptflow chat [OPTIONS] PROMPT
+```
+
+**位置參數 (Arguments)**：
+
+| 參數名稱 | 類型 | 必填 | 說明 |
+| :--- | :--- | :---: | :--- |
+| `PROMPT` | 字串 (`str`) | **是** | 傳送給 ChatGPT 的提示詞或提問內容。若包含空格或特殊符號請使用引號包覆。 |
+
+**選項旗標 (Options)**：
+
+| 長選項 | 短選項 | 類型 | 預設值 | 說明 |
+| :--- | :---: | :---: | :---: | :--- |
+| `--model` | `-m` | 字串 (`str`) | `auto` | 指定後端模型型號（例如 `auto`, `o1`, `o3-mini`, `gpt-4o`）。 |
+| `--thinking` | `-t` | 布林開關 (`bool`) | `False` | 開啟推理思考模式（Thinking / CoT），終端將即時展開思維鏈面板。 |
+| `--session` | `-s` | 字串 (`str`) | `None` | 指定接續既有的對話會話 ID（UUID）。傳入後將自動繼承上下文延續對話。 |
+| `--debug` | `-d` | 布林開關 (`bool`) | `False` | 開啟詳細 Debug 日誌（顯示底層 HTTP 握手、Sentinel PoW 求解進度等）。 |
+| `--help` | | | | 顯示此指令的完整參數說明並退出。 |
+
+**使用範例**：
+
+```bash
+# 範例 A：基本單次問答（回答完畢後終端末尾會印出該次對話的「會話 ID」）
 uv run gptflow chat "請簡要說明什麼是量子糾纏？"
 
-# 2. 開啟思考思維鏈模式 (-t / --thinking)
+# 範例 B：開啟思考思維鏈模式 (-t)
 uv run gptflow chat "請分析 13*14 的心算方式" -t
 
-# 3. 指定同一會話 ID 接續多輪對話 (-s / --session)
+# 範例 C：接續既有會話 (-s)，延續上下文多輪提問
 uv run gptflow chat "那 17*18 呢？" -s 6ab83da3-4ce8-83e8-860e-1ebac5cb68dc
+
+# 範例 D：指定模型並開啟詳細除錯日誌 (-m, -d)
+uv run gptflow chat "寫一個快速排序演算法" -m o3-mini -d
 ```
 
-### 會話紀錄管理 (`gptflow session`)
-```bash
-# 列出本地所有儲存的會話
-uv run gptflow session list
+---
 
-# 檢視指定會話的歷史問答
-uv run gptflow session show <會話ID>
+### 2. 身分認證管理 (`gptflow auth`)
+
+管理本地存儲的身分憑證、查看登入態、刷新 Token 與匯入 HAR 封包。
+
+#### 2.1 匯入憑證 (`gptflow auth import`)
+從瀏覽器匯出的 HAR 封包檔案或 JSON 憑證中擷取 Bearer Token、裝置 ID 與所有 Cookies。
+
+**語法**：
+```bash
+gptflow auth import [OPTIONS] FILE_PATH
 ```
 
-### 認證管理 (`gptflow auth`)
+**位置參數 (Arguments)**：
+
+| 參數名稱 | 類型 | 必填 | 說明 |
+| :--- | :--- | :---: | :--- |
+| `FILE_PATH` | 路徑 (`Path`) | **是** | 瀏覽器 DevTools 匯出的 HAR 檔案（`.har`, `.json`）或憑證 JSON 路徑。 |
+
+**使用範例**：
 ```bash
-# 檢視當前憑證有效性、Email、訂閱方案與 Cookie 數量
+uv run gptflow auth import "Packet/第二個 session 封包紀錄.json"
+```
+
+#### 2.2 檢視憑證狀態 (`gptflow auth status`)
+檢視當前已儲存的使用者 Email、使用者 ID、訂閱方案、裝置 ID、有效 Cookie 數量以及 Token 是否已過期。
+
+**語法**：
+```bash
+gptflow auth status [OPTIONS]
+```
+
+**使用範例**：
+```bash
 uv run gptflow auth status
+```
 
-# 手動向伺服器刷新 Access Token 與 Cookie
+#### 2.3 刷新 Access Token (`gptflow auth refresh`)
+使用本地已儲存的 Session Cookie 主動向 ChatGPT 伺服器換發全新的 Access Token 與延長 Cookies 效期。
+
+**語法**：
+```bash
+gptflow auth refresh [OPTIONS]
+```
+
+**選項旗標 (Options)**：
+
+| 長選項 | 類型 | 預設值 | 說明 |
+| :--- | :---: | :---: | :--- |
+| `--debug` | 布林開關 (`bool`) | `False` | 開啟刷新流程的詳細除錯日誌。 |
+| `--help` | | | 顯示此指令的說明並退出。 |
+
+**使用範例**：
+```bash
+# 正常刷新
 uv run gptflow auth refresh
 
-# 重新匯入 HAR 檔案
-uv run gptflow auth import <檔案路徑>
+# 開啟除錯日誌刷新
+uv run gptflow auth refresh --debug
+```
+
+---
+
+### 3. 對話會話管理 (`gptflow session`)
+
+檢視與管理存儲於本地 `sessions/` 目錄中的 DAG 對話歷史記錄。
+
+#### 3.1 列出所有會話 (`gptflow session list`)
+列出本地存儲的所有會話 ID 以及該會話內包含的訊息總節點數。
+
+**語法**：
+```bash
+gptflow session list [OPTIONS]
+```
+
+**使用範例**：
+```bash
+uv run gptflow session list
+```
+
+#### 3.2 檢視指定會話詳細內容 (`gptflow session show`)
+完整還原指定會話內的所有訊息歷史，包含使用者提問、模型思考過程（若有）與 ChatGPT 的回覆內容。
+
+**語法**：
+```bash
+gptflow session show [OPTIONS] SESSION_ID
+```
+
+**位置參數 (Arguments)**：
+
+| 參數名稱 | 類型 | 必填 | 說明 |
+| :--- | :--- | :---: | :--- |
+| `SESSION_ID` | 字串 (`str`) | **是** | 要查詢的會話 ID（可透過 `session list` 獲取）。 |
+
+**使用範例**：
+```bash
+uv run gptflow session show 6ab83da3-4ce8-83e8-860e-1ebac5cb68dc
 ```
 
 ---
