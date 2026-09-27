@@ -36,30 +36,18 @@ uv run gptflow auth status
 
 ---
 
-## 常用 CLI 指令速查
+## 💻 常用 CLI 指令速查
 
-### 單次即時串流問答 (`gptflow chat`)
+### 串流問答與多輪對話 (`gptflow chat`)
 ```bash
-# 基本串流問答
+# 1. 建立新對話（回答完畢後終端會輸出該次對話的「會話 ID」）
 uv run gptflow chat "請簡要說明什麼是量子糾纏？"
 
-# 開啟思考思維鏈模式 (-t / --thinking)
+# 2. 開啟思考思維鏈模式 (-t / --thinking)
 uv run gptflow chat "請分析 13*14 的心算方式" -t
 
-# 接續指定會話的多輪對話
-uv run gptflow chat "那 17*18 呢？" --session-id <會話ID>
-```
-
-### 互動式多輪對話 (`gptflow repl`)
-```bash
-# 開啟終端互動式問答 (支援上下鍵歷史紀錄、多輪上下文記憶)
-uv run gptflow repl
-
-# 開啟思考鏈模式
-uv run gptflow repl -t
-
-# 載入歷史會話繼續交談
-uv run gptflow repl --session-id <會話ID>
+# 3. 指定同一會話 ID 接續多輪對話 (-s / --session)
+uv run gptflow chat "那 17*18 呢？" -s 6ab83da3-4ce8-83e8-860e-1ebac5cb68dc
 ```
 
 ### 會話紀錄管理 (`gptflow session`)

@@ -45,9 +45,10 @@ def chat_command(
                 if chunk.conversation_id:
                     conv_id = chunk.conversation_id
 
-            if conv_id and not session_id:
+            active_id = conv_id or session_id
+            if active_id:
                 console.print(
-                    f"\n[dim]會話 ID: {conv_id} (可使用 -s {conv_id} 接續對話)[/dim]"
+                    f"\n[dim]會話 ID: {active_id} (接續對話請加上 -s {active_id})[/dim]"
                 )
         finally:
             await http_client.close()

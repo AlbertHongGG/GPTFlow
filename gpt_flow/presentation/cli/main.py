@@ -5,7 +5,6 @@ import typer
 from gpt_flow.presentation.cli.commands import (
     auth_app,
     chat_command,
-    repl_command,
     session_app,
 )
 
@@ -21,9 +20,8 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 
-# Register top-level commands
+# Register top-level command
 app.command("chat")(chat_command)
-app.command("repl")(repl_command)
 
 # Register sub-command groups
 app.add_typer(auth_app)
