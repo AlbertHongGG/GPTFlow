@@ -29,7 +29,7 @@ uv run gptflow auth import "路徑/封包.har"
 | 參數 / 選項 | 類型 | 預設值 | 說明 |
 | :--- | :---: | :---: | :--- |
 | `PROMPT` | `str` | (必填) | 提問內容 |
-| `-m, --model` | `str` | `auto` | 模型型號 (`auto`, `o1`, `o3-mini`, `gpt-4o`) |
+| `-m, --model` | `str` | `auto` | 模型型號 (`auto`, `gpt-6-luna`, `gpt-6-sol`, `gpt-6-astra`) |
 | `-t, --thinking` | `flag` | `False` | 開啟思考鏈模式 (Thinking / CoT) |
 | `-s, --session` | `str` | `None` | 接續既有會話 ID |
 | `-d, --debug` | `flag` | `False` | 開啟詳細除錯日誌 |

@@ -26,7 +26,8 @@ class AppConfig(BaseSettings):
 
     # Model & Reasoning Defaults
     default_model: str = Field(
-        default="auto", description="Default model (e.g. auto, o1, o3-mini)"
+        default="auto",
+        description="Default model (e.g. auto, gpt-6-luna, gpt-6-sol, gpt-6-astra)",
     )
     default_language: str = Field(default="zh-TW", description="Interface language tag")
     default_timezone: str = Field(default="Asia/Taipei", description="Timezone name")

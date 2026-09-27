@@ -5,11 +5,9 @@ class ModelKind(str, Enum):
     """Supported model identifiers."""
 
     AUTO = "auto"
-    O1 = "o1"
-    O1_MINI = "o1-mini"
-    O3_MINI = "o3-mini"
-    GPT_4O = "gpt-4o"
-    GPT_4O_MINI = "gpt-4o-mini"
+    GPT_6_LUNA = "gpt-6-luna"
+    GPT_6_SOL = "gpt-6-sol"
+    GPT_6_ASTRA = "gpt-6-astra"
 
 
 class AuthorRole(str, Enum):

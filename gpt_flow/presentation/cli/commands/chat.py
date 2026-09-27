@@ -14,7 +14,7 @@ from gpt_flow.presentation.renderers.rich_stream import RichStreamRenderer
 def chat_command(
     prompt: str = typer.Argument(..., help="傳送給 ChatGPT 的提示詞"),
     model: str = typer.Option(
-        "auto", "-m", "--model", help="模型型號 (auto, o1, o3-mini)"
+        "auto", "-m", "--model", help="模型型號 (auto, gpt-6-luna, gpt-6-sol, gpt-6-astra)"
     ),
     thinking: bool = typer.Option(
         False, "-t", "--thinking", help="開啟推理思考模式 (CoT)"
