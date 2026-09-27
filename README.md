@@ -36,7 +36,7 @@ uv run gptflow auth status
 
 ---
 
-## 💻 CLI 指令完整說明與參數清單
+## CLI 指令完整說明與參數清單
 
 ### 1. 串流問答與多輪對話 (`gptflow chat`)
 
