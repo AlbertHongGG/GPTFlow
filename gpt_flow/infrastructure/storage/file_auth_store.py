@@ -178,6 +178,7 @@ class FileAuthRepository(IAuthRepository):
             expires_at=claims.get("exp"),
         )
         self.save(new_creds)
-        logger.info(f"Successfully refreshed access token for {new_creds.email or 'user'}.")
+        logger.info(
+            f"Successfully refreshed access token for {new_creds.email or 'user'}."
+        )
         return new_creds
-

@@ -55,7 +55,9 @@ class ChatService:
                 "No credentials found. Please import your cookies or auth token."
             )
         if creds.is_expired():
-            logger.info("Access token is expired, attempting auto-refresh via session...")
+            logger.info(
+                "Access token is expired, attempting auto-refresh via session..."
+            )
             try:
                 creds = await self.auth_repo.refresh(self.http_client)
             except Exception as e:
